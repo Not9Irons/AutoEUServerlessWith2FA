@@ -207,8 +207,8 @@ def get_pin_from_mailparser(url_id: str) -> str:
     )
     pin = response.json()[0]["pin"]
     if response.status_code != 200:
-    print(f"❌ [API 请求失败] 状态码: {response.status_code}")
-    print(f"❌ [原始返回内容]: {response.text}")
+      print(f"❌ [API 请求失败] 状态码: {response.status_code}")
+      print(f"❌ [原始返回内容]: {response.text}")
     # 根据你的代码逻辑返回失败状态，比如 return None
 
 try:
