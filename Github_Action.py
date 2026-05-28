@@ -201,26 +201,51 @@ def get_captcha_solver_usage() -> dict:
 
 # 从 Mailparser 获取 PIN
 def get_pin_from_mailparser(url_id: str) -> str:
-    # 从 Mailparser 获取 PIN# 
-    response = requests.get(
-        f"{MAILPARSER_DOWNLOAD_BASE_URL}{url_id}",
-    )
-    pin = response.json()[0]["pin"]
-    if response.status_code != 200:
-      print(f"❌ [API 请求失败] 状态码: {response.status_code}")
-      print(f"❌ [原始返回内容]: {response.text}")
-    # 根据你的代码逻辑返回失败状态，比如 return None
+    import io
+    import openpyxl
 
-try:
-    # 尝试解析 JSON
-    json_data = response.json()
-    pin = json_data[0]["pin"]
-except ValueError: # 捕获 JSON 解析错误
-    print("❌ [JSON 解析失败] API 返回的不是合法的 JSON。")
-    print(f"❌ [原始返回内容]: {response.text}")
-    # return None
-    return pin
+    max_retries = 5
+    retry_interval = 10
 
+    for attempt in range(max_retries):
+        response = requests.get(
+            f"{MAILPARSER_DOWNLOAD_BASE_URL}{url_id}",
+        )
+        log(f"[MailParser] 第 {attempt + 1} 次尝试，HTTP状态码: {response.status_code}")
+
+        if not response.content:
+            log(f"[MailParser] 返回空内容，{retry_interval}秒后重试...")
+            time.sleep(retry_interval)
+            continue
+
+        try:
+            wb = openpyxl.load_workbook(io.BytesIO(response.content))
+            ws = wb.active
+
+            headers = [cell.value for cell in ws[1]]
+            log(f"[MailParser] xlsx 表头: {headers}")
+
+            last_row = None
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if any(row):
+                    last_row = row
+
+            if last_row is None:
+                log(f"[MailParser] xlsx 无数据行，{retry_interval}秒后重试...")
+                time.sleep(retry_interval)
+                continue
+
+            pin_index = headers.index("pin")
+            pin = str(last_row[pin_index])
+            log(f"[MailParser] 获取到 PIN: {pin}")
+            return pin
+
+        except Exception as e:
+            log(f"[MailParser] 解析失败: {e}，{retry_interval}秒后重试...")
+            time.sleep(retry_interval)
+            continue
+
+    raise Exception("[MailParser] 多次重试后仍未获取到 PIN")
 # 登录函数
 @login_retry(max_retry=LOGIN_MAX_RETRY_COUNT)
 def login(username: str, password: str) -> (str, requests.session):
