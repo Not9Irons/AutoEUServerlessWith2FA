@@ -235,7 +235,7 @@ def get_pin_from_mailparser(url_id: str) -> str:
                 time.sleep(retry_interval)
                 continue
 
-            pin_index = headers.index("pin")
+            pin_index = headers.index("PIN")
             pin = str(last_row[pin_index])
             log(f"[MailParser] 获取到 PIN: {pin}")
             return pin
