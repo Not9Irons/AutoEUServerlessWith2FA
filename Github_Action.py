@@ -201,31 +201,12 @@ def get_captcha_solver_usage() -> dict:
 
 # 从 Mailparser 获取 PIN
 def get_pin_from_mailparser(url_id: str) -> str:
-    # 从 Mailparser 获取 PIN，增加重试机制
-    max_retries = 5
-    retry_interval = 10  # 每次重试等待10秒
-
-    for attempt in range(max_retries):
-        response = requests.get(
-            f"{MAILPARSER_DOWNLOAD_BASE_URL}{url_id}",
-        )
-        log(f"[MailParser] 第 {attempt + 1} 次尝试，HTTP状态码: {response.status_code}")
-
-        if not response.text.strip():
-            log(f"[MailParser] 返回空响应，{retry_interval}秒后重试...")
-            time.sleep(retry_interval)
-            continue
-
-        data = response.json()
-        if not data:
-            log(f"[MailParser] 返回空列表，邮件可能尚未到达，{retry_interval}秒后重试...")
-            time.sleep(retry_interval)
-            continue
-
-        pin = data[0]["pin"]
-        return pin
-
-    raise Exception("[MailParser] 多次重试后仍未获取到 PIN，请检查：\n1. MAILPARSER_DOWNLOAD_URL_ID 是否正确\n2. MailParser 是否已收到续费邮件\n3. 解析规则字段名是否为 pin")
+    # 从 Mailparser 获取 PIN# 
+    response = requests.get(
+        f"{MAILPARSER_DOWNLOAD_BASE_URL}{url_id}",
+    )
+    pin = response.json()[0]["pin"]
+    return pin
 
 # 登录函数
 @login_retry(max_retry=LOGIN_MAX_RETRY_COUNT)
