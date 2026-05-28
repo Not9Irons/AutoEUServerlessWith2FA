@@ -206,6 +206,19 @@ def get_pin_from_mailparser(url_id: str) -> str:
         f"{MAILPARSER_DOWNLOAD_BASE_URL}{url_id}",
     )
     pin = response.json()[0]["pin"]
+    if response.status_code != 200:
+    print(f"❌ [API 请求失败] 状态码: {response.status_code}")
+    print(f"❌ [原始返回内容]: {response.text}")
+    # 根据你的代码逻辑返回失败状态，比如 return None
+
+try:
+    # 尝试解析 JSON
+    json_data = response.json()
+    pin = json_data[0]["pin"]
+except ValueError: # 捕获 JSON 解析错误
+    print("❌ [JSON 解析失败] API 返回的不是合法的 JSON。")
+    print(f"❌ [原始返回内容]: {response.text}")
+    # return None
     return pin
 
 # 登录函数
